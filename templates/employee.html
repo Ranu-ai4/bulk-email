@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bulk Email Sender</title>
+    <title>Employee Dashboard | Bulk Email Sender</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -15,6 +15,7 @@
             --bg-card: #1a1a24;
             --accent: #00ff88;
             --accent-dim: #00ff8833;
+            --accent-blue: #00ccff;
             --text-primary: #ffffff;
             --text-secondary: #8888aa;
             --danger: #ff4466;
@@ -138,118 +139,6 @@
             display: flex;
         }
 
-        /* User Management */
-        #userManagementView {
-            display: none;
-        }
-
-        #userManagementView.active {
-            display: block;
-        }
-
-        .dashboard-main {
-            display: block;
-        }
-
-        .dashboard-main.hidden {
-            display: none;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .badge-active {
-            background: rgba(0, 255, 136, 0.15);
-            color: var(--accent);
-        }
-
-        .badge-inactive {
-            background: rgba(255, 68, 102, 0.15);
-            color: var(--danger);
-        }
-
-        /* Toggle Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 46px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            inset: 0;
-            background-color: var(--bg-secondary);
-            transition: .4s;
-            border-radius: 24px;
-            border: 1px solid var(--border);
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: var(--text-secondary);
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked+.slider {
-            background-color: var(--accent-dim);
-            border-color: var(--accent);
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(22px);
-            background-color: var(--accent);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .form-control {
-            width: 100%;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--text-primary);
-            font-family: 'Space Mono', monospace;
-            outline: none;
-        }
-
-        .form-control:focus {
-            border-color: var(--accent);
-        }
-
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -293,17 +182,11 @@
         }
 
         @media (max-width: 1200px) {
-            .grid-3 {
-                grid-template-columns: 1fr 1fr;
-            }
+            .grid-3 { grid-template-columns: 1fr 1fr; }
         }
 
         @media (max-width: 900px) {
-
-            .grid,
-            .grid-3 {
-                grid-template-columns: 1fr;
-            }
+            .grid, .grid-3 { grid-template-columns: 1fr; }
         }
 
         .card {
@@ -318,9 +201,7 @@
         .card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 3px;
             background: linear-gradient(90deg, var(--accent), transparent);
         }
@@ -343,13 +224,8 @@
             font-size: 0.85rem;
         }
 
-        .config-row:last-child {
-            border-bottom: none;
-        }
-
-        .config-label {
-            color: var(--text-secondary);
-        }
+        .config-row:last-child { border-bottom: none; }
+        .config-label { color: var(--text-secondary); }
 
         .config-value {
             color: var(--text-primary);
@@ -371,19 +247,11 @@
             letter-spacing: 1px;
         }
 
-        .status-ok {
-            background: rgba(0, 255, 136, 0.15);
-            color: var(--accent);
-        }
-
-        .status-error {
-            background: rgba(255, 68, 102, 0.15);
-            color: var(--danger);
-        }
+        .status-ok { background: rgba(0, 255, 136, 0.15); color: var(--accent); }
+        .status-error { background: rgba(255, 68, 102, 0.15); color: var(--danger); }
 
         .status-dot {
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             border-radius: 50%;
             background: currentColor;
         }
@@ -408,9 +276,7 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .recipients-table tr:last-child td {
-            border-bottom: none;
-        }
+        .recipients-table tr:last-child td { border-bottom: none; }
 
         .total-badge {
             background: var(--bg-secondary);
@@ -460,10 +326,7 @@
             box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
         }
 
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-secondary {
             background: var(--bg-secondary);
@@ -471,14 +334,8 @@
             border: 1px solid var(--border);
         }
 
-        .btn-secondary:hover {
-            border-color: var(--accent);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
+        .btn-secondary:hover { border-color: var(--accent); }
+        .btn-danger { background: var(--danger); color: white; }
 
         .btn-group {
             display: flex;
@@ -487,14 +344,8 @@
             flex-wrap: wrap;
         }
 
-        .progress-container {
-            margin-top: 30px;
-            display: none;
-        }
-
-        .progress-container.active {
-            display: block;
-        }
+        .progress-container { margin-top: 30px; display: none; }
+        .progress-container.active { display: block; }
 
         .progress-bar {
             height: 8px;
@@ -520,31 +371,11 @@
             font-size: 0.9rem;
         }
 
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .stat-value.sent {
-            color: var(--accent);
-        }
-
-        .stat-value.failed {
-            color: var(--danger);
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
+        .stat { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-value.sent { color: var(--accent); }
+        .stat-value.failed { color: var(--danger); }
+        .stat-label { color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; }
 
         .errors-list {
             margin-top: 20px;
@@ -558,9 +389,7 @@
             display: none;
         }
 
-        .errors-list.active {
-            display: block;
-        }
+        .errors-list.active { display: block; }
 
         .error-item {
             font-family: 'Space Mono', monospace;
@@ -569,9 +398,7 @@
             border-bottom: 1px solid rgba(255, 68, 102, 0.2);
         }
 
-        .error-item:last-child {
-            border-bottom: none;
-        }
+        .error-item:last-child { border-bottom: none; }
 
         .alert {
             padding: 15px 20px;
@@ -581,23 +408,9 @@
             font-size: 0.85rem;
         }
 
-        .alert-error {
-            background: rgba(255, 68, 102, 0.15);
-            border: 1px solid var(--danger);
-            color: var(--danger);
-        }
-
-        .alert-warning {
-            background: rgba(255, 170, 0, 0.15);
-            border: 1px solid var(--warning);
-            color: var(--warning);
-        }
-
-        .alert-success {
-            background: rgba(0, 255, 136, 0.15);
-            border: 1px solid var(--accent);
-            color: var(--accent);
-        }
+        .alert-error { background: rgba(255, 68, 102, 0.15); border: 1px solid var(--danger); color: var(--danger); }
+        .alert-warning { background: rgba(255, 170, 0, 0.15); border: 1px solid var(--warning); color: var(--warning); }
+        .alert-success { background: rgba(0, 255, 136, 0.15); border: 1px solid var(--accent); color: var(--accent); }
 
         .complete-message {
             display: none;
@@ -608,14 +421,8 @@
             border-radius: 12px;
         }
 
-        .complete-message.active {
-            display: block;
-        }
-
-        .complete-message h3 {
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
+        .complete-message.active { display: block; }
+        .complete-message h3 { color: var(--accent); margin-bottom: 10px; }
 
         .upload-zone {
             border: 2px dashed var(--border);
@@ -627,33 +434,12 @@
             margin-bottom: 20px;
         }
 
-        .upload-zone:hover {
-            border-color: var(--accent);
-            background: rgba(0, 255, 136, 0.05);
-        }
-
-        .upload-zone.dragover {
-            border-color: var(--accent);
-            background: rgba(0, 255, 136, 0.1);
-        }
-
-        .upload-zone input {
-            display: none;
-        }
-
-        .upload-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-
-        .upload-text {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .upload-text strong {
-            color: var(--accent);
-        }
+        .upload-zone:hover { border-color: var(--accent); background: rgba(0, 255, 136, 0.05); }
+        .upload-zone.dragover { border-color: var(--accent); background: rgba(0, 255, 136, 0.1); }
+        .upload-zone input { display: none; }
+        .upload-icon { font-size: 3rem; margin-bottom: 10px; }
+        .upload-text { color: var(--text-secondary); font-size: 0.9rem; }
+        .upload-text strong { color: var(--accent); }
 
         /* ── MODAL BASE ── */
         .modal-overlay {
@@ -667,9 +453,7 @@
             padding: 20px;
         }
 
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { display: flex; }
 
         .modal {
             background: var(--bg-card);
@@ -692,9 +476,7 @@
             flex-shrink: 0;
         }
 
-        .modal-header h2 {
-            font-size: 1.3rem;
-        }
+        .modal-header h2 { font-size: 1.3rem; }
 
         .modal-close {
             background: none;
@@ -705,9 +487,7 @@
             padding: 5px;
         }
 
-        .modal-close:hover {
-            color: var(--text-primary);
-        }
+        .modal-close:hover { color: var(--text-primary); }
 
         .modal-body {
             padding: 30px;
@@ -733,36 +513,13 @@
             font-size: 0.85rem;
         }
 
-        .preview-meta-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
+        .preview-meta-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .preview-meta-row:last-child { margin-bottom: 0; }
+        .preview-meta-label { color: var(--text-secondary); min-width: 80px; }
+        .preview-meta-value { color: var(--text-primary); }
 
-        .preview-meta-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .preview-meta-label {
-            color: var(--text-secondary);
-            min-width: 80px;
-        }
-
-        .preview-meta-value {
-            color: var(--text-primary);
-        }
-
-        .email-preview-frame {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .email-preview-frame iframe {
-            width: 100%;
-            height: 500px;
-            border: none;
-        }
+        .email-preview-frame { background: white; border-radius: 8px; overflow: hidden; }
+        .email-preview-frame iframe { width: 100%; height: 500px; border: none; }
 
         .btn-edit {
             font-family: 'Syne', sans-serif;
@@ -793,6 +550,7 @@
             border-radius: 16px;
             width: 100%;
             max-width: 1100px;
+            /* Key: take full available height but not overflow */
             height: 90vh;
             max-height: 90vh;
             display: flex;
@@ -800,11 +558,12 @@
             overflow: hidden;
         }
 
+        /* Editor body fills remaining space between header and footer */
         .editor-body {
             display: grid;
             grid-template-columns: 1fr 1fr;
             flex: 1;
-            min-height: 0;
+            min-height: 0; /* crucial — prevents overflow */
             overflow: hidden;
         }
 
@@ -863,7 +622,7 @@
             min-height: 0;
         }
 
-        /* ── EDITOR FOOTER — always visible ── */
+        /* ── EDITOR FOOTER ── */
         .editor-footer {
             flex-shrink: 0;
             border-top: 1px solid var(--border);
@@ -874,6 +633,7 @@
             gap: 10px;
         }
 
+        /* AI Enhance button row */
         .ai-enhance-row {
             display: flex;
             justify-content: center;
@@ -894,10 +654,9 @@
             letter-spacing: 1px;
         }
 
-        .btn-ai-enhance:hover {
-            background: rgba(0, 255, 136, 0.1);
-        }
+        .btn-ai-enhance:hover { background: rgba(0, 255, 136, 0.1); }
 
+        /* AI prompt box */
         .ai-prompt-box {
             display: none;
             background: var(--bg-secondary);
@@ -908,9 +667,7 @@
             flex-direction: column;
         }
 
-        .ai-prompt-box.visible {
-            display: flex;
-        }
+        .ai-prompt-box.visible { display: flex; }
 
         .ai-prompt-label {
             font-size: 0.8rem;
@@ -925,7 +682,7 @@
 
         .ai-prompt-input-row input {
             flex: 1;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0,0,0,0.3);
             border: 1px solid var(--border);
             border-radius: 6px;
             padding: 8px 12px;
@@ -935,9 +692,7 @@
             outline: none;
         }
 
-        .ai-prompt-input-row input:focus {
-            border-color: var(--accent);
-        }
+        .ai-prompt-input-row input:focus { border-color: var(--accent); }
 
         .btn-auto {
             background: rgba(0, 255, 136, 0.1);
@@ -953,9 +708,7 @@
             transition: background 0.2s;
         }
 
-        .btn-auto:hover {
-            background: rgba(0, 255, 136, 0.2);
-        }
+        .btn-auto:hover { background: rgba(0, 255, 136, 0.2); }
 
         .ai-prompt-actions {
             display: flex;
@@ -981,24 +734,17 @@
             color: var(--text-secondary);
         }
 
-        .btn-sm-cancel:hover {
-            color: var(--text-primary);
-        }
+        .btn-sm-cancel:hover { color: var(--text-primary); }
 
         .btn-sm-apply {
             background: var(--accent);
             color: #000;
         }
 
-        .btn-sm-apply:hover {
-            opacity: 0.9;
-        }
+        .btn-sm-apply:hover { opacity: 0.9; }
+        .btn-sm-apply:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .btn-sm-apply:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
+        /* Save/Cancel row */
         .editor-actions-row {
             display: flex;
             justify-content: flex-end;
@@ -1029,9 +775,7 @@
             transition: border-color 0.2s;
         }
 
-        .btn-editor-cancel:hover {
-            border-color: var(--accent);
-        }
+        .btn-editor-cancel:hover { border-color: var(--accent); }
 
         .btn-editor-save {
             background: var(--accent);
@@ -1048,10 +792,7 @@
             transition: opacity 0.2s, transform 0.2s;
         }
 
-        .btn-editor-save:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
+        .btn-editor-save:hover { opacity: 0.9; transform: translateY(-1px); }
     </style>
 </head>
 
@@ -1066,20 +807,17 @@
                     <div class="user-info">
                         <div class="user-email">{{ session['email'] }}</div>
                         <div class="user-role">
-                            <span
-                                style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
                             {{ session['role']|capitalize }}
                         </div>
                     </div>
-                    <a href="#" onclick="showUserManagement()">Add User</a>
                     <a href="/logout">Logout</a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Main Dashboard -->
-    <div class="container dashboard-main" id="mainDashboard">
+    <div class="container">
         <header>
             <h1>Bulk Email Sender</h1>
             <p class="subtitle">Upload recipients, preview, and send</p>
@@ -1158,11 +896,7 @@
             {% if recipients %}
             <table class="recipients-table">
                 <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Email</th>
-                        <th>Name</th>
-                    </tr>
+                    <tr><th>#</th><th>Email</th><th>Name</th></tr>
                 </thead>
                 <tbody>
                     {% for recipient in recipients %}
@@ -1185,12 +919,12 @@
 
         <div class="send-section">
             <div class="btn-group">
-                <button id="previewBtn" class="btn btn-secondary" {% if not files_status.template or total_recipients==0
-                    %}disabled{% endif %}>
+                <button id="previewBtn" class="btn btn-secondary"
+                    {% if not files_status.template or total_recipients==0 %}disabled{% endif %}>
                     Preview Email
                 </button>
-                <button id="sendBtn" class="btn btn-primary" {% if errors or not files_status.csv or total_recipients==0
-                    %}disabled{% endif %}>
+                <button id="sendBtn" class="btn btn-primary"
+                    {% if errors or not files_status.csv or total_recipients==0 %}disabled{% endif %}>
                     Send Emails
                 </button>
             </div>
@@ -1224,29 +958,6 @@
                     Send Another Batch
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- User Management View -->
-    <div class="container" id="userManagementView">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:40px;">
-            <button class="btn-edit" onclick="hideUserManagement()">← Back to Dashboard</button>
-            <h1 style="margin-bottom:0;">User Management</h1>
-            <button class="btn btn-primary" style="padding:10px 24px;font-size:0.8rem;" onclick="openUserModal()">Create
-                User</button>
-        </div>
-        <div class="card">
-            <h2 class="card-title"><span>👥</span> System Users</h2>
-            <table class="recipients-table">
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="userTableBody"></tbody>
-            </table>
         </div>
     </div>
 
@@ -1296,6 +1007,7 @@
                 <button class="modal-close" onclick="closeEditor()">&times;</button>
             </div>
 
+            <!-- Editor body: HTML editor left, rich text preview right -->
             <div class="editor-body">
                 <div class="editor-pane">
                     <div class="editor-pane-title">HTML Editor</div>
@@ -1303,19 +1015,22 @@
                 </div>
                 <div class="preview-pane">
                     <div class="editor-pane-title">Live Preview (Rich Text)</div>
-                    <div id="editorPreviewDiv" class="rich-editor-preview" contenteditable="true"
-                        oninput="updateHtmlSource()"></div>
+                    <div id="editorPreviewDiv" class="rich-editor-preview"
+                        contenteditable="true" oninput="updateHtmlSource()"></div>
                 </div>
             </div>
 
-            <!-- EDITOR FOOTER — always visible -->
+            <!-- EDITOR FOOTER — always visible, never cut off -->
             <div class="editor-footer">
+
+                <!-- Row 1: AI Enhance button (centered) OR prompt box -->
                 <div class="ai-enhance-row" id="aiEnhanceRow">
                     <button class="btn-ai-enhance" id="aiEnhanceBtn" onclick="toggleAiPrompt()">
                         ✨ AI Enhance
                     </button>
                 </div>
 
+                <!-- AI Prompt Box (hidden by default) -->
                 <div class="ai-prompt-box" id="aiPromptContainer">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <span class="ai-prompt-label">Describe what you want to change:</span>
@@ -1335,50 +1050,18 @@
                     </div>
                 </div>
 
+                <!-- Row 2: Save message + Cancel + Save Template -->
                 <div class="editor-actions-row">
                     <span class="editor-save-msg" id="editorSaveMsg">✅ Template saved!</span>
                     <button class="btn-editor-cancel" onclick="closeEditor()">Cancel</button>
                     <button class="btn-editor-save" onclick="saveTemplate()">Save Template</button>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Create/Edit User Modal -->
-    <div class="modal-overlay" id="userModal">
-        <div class="modal" style="max-width:400px;">
-            <div class="modal-header">
-                <h2>👤 Create User</h2>
-                <button class="modal-close" onclick="closeUserModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="newUserEmail" class="form-control" placeholder="user@example.com">
-                </div>
-                <div class="form-group">
-                    <label>Account Status</label>
-                    <div style="display:flex;align-items:center;gap:15px;">
-                        <span id="statusLabel"
-                            style="font-family:'Space Mono',monospace;font-size:0.85rem;color:var(--accent);">Active</span>
-                        <label class="switch">
-                            <input type="checkbox" id="userStatusToggle" checked
-                                onchange="document.getElementById('statusLabel').innerText = this.checked ? 'Active' : 'Inactive'; document.getElementById('statusLabel').style.color = this.checked ? 'var(--accent)' : 'var(--text-secondary)'">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="saveUser()">Save User</button>
             </div>
         </div>
     </div>
 
     <script>
-        const profileBtn = document.getElementById('profileBtn');
-        const profileDropdown = document.getElementById('profileDropdown');
         const sendBtn = document.getElementById('sendBtn');
         const previewBtn = document.getElementById('previewBtn');
         const progressContainer = document.getElementById('progressContainer');
@@ -1454,6 +1137,7 @@
 
         previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview(); });
 
+        // Open Editor
         async function openEditor() {
             closePreview();
             try {
@@ -1467,6 +1151,7 @@
             }
         }
 
+        // Close Editor
         function closeEditor() {
             editorModal.classList.remove('active');
             document.getElementById('editorPreviewDiv').innerHTML = '';
@@ -1566,10 +1251,12 @@
         sendBtn.addEventListener('click', async () => {
             const total = parseInt(document.getElementById('totalRecipients').textContent);
             if (!confirm(`Are you sure you want to send emails to ${total} recipients?`)) return;
+
             sendBtn.disabled = true;
             sendBtn.textContent = 'Sending...';
             previewBtn.disabled = true;
             progressContainer.classList.add('active');
+
             try {
                 const fromName = document.getElementById('fromName').value;
                 const subject = document.getElementById('emailSubject').value;
@@ -1622,100 +1309,10 @@
             }
         }
 
-        // User Management
-        function showUserManagement() {
-            document.getElementById('mainDashboard').classList.add('hidden');
-            document.getElementById('userManagementView').classList.add('active');
-            profileDropdown.classList.remove('active');
-            loadUsers();
-        }
-
-        function hideUserManagement() {
-            document.getElementById('mainDashboard').classList.remove('hidden');
-            document.getElementById('userManagementView').classList.remove('active');
-        }
-
-        let currentEditEmail = null;
-
-        async function loadUsers() {
-            const res = await fetch('/users');
-            const users = await res.json();
-            const tbody = document.getElementById('userTableBody');
-            tbody.innerHTML = '';
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${user.email}</td>
-                    <td>
-                        <span class="badge ${user.approved == 1 ? 'badge-active' : 'badge-inactive'}">
-                            ${user.approved == 1 ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td>
-                        <div style="display:flex;gap:8px;">
-                            <button class="btn-edit" style="padding:4px 12px;font-size:0.75rem;"
-                                onclick="editUser('${user.email}', ${user.approved})">Edit</button>
-                            <button style="padding:4px 12px;font-size:0.75rem;background:#ff4444;color:white;border:none;border-radius:4px;cursor:pointer;"
-                                onclick="deleteUser('${user.email}')">Delete</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function openUserModal() {
-            currentEditEmail = null;
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserEmail').disabled = false;
-            document.getElementById('userStatusToggle').checked = true;
-            document.getElementById('statusLabel').innerText = 'Active';
-            document.getElementById('statusLabel').style.color = 'var(--accent)';
-            document.getElementById('userModal').classList.add('active');
-            document.querySelector('#userModal h2').innerText = '👤 Create User';
-        }
-
-        function editUser(email, approved) {
-            currentEditEmail = email;
-            document.getElementById('newUserEmail').value = email;
-            document.getElementById('newUserEmail').disabled = true;
-            document.getElementById('userStatusToggle').checked = approved === 1;
-            document.getElementById('statusLabel').innerText = approved === 1 ? 'Active' : 'Inactive';
-            document.getElementById('statusLabel').style.color = approved === 1 ? 'var(--accent)' : 'var(--text-secondary)';
-            document.getElementById('userModal').classList.add('active');
-            document.querySelector('#userModal h2').innerText = '✏️ Edit User';
-        }
-
-        async function deleteUser(email) {
-            if (!confirm(`Are you sure you want to delete user ${email}?`)) return;
-            const res = await fetch('/delete-user', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            });
-            const data = await res.json();
-            if (data.success) { loadUsers(); }
-            else { alert('Error: ' + data.error); }
-        }
-
-        function closeUserModal() { document.getElementById('userModal').classList.remove('active'); }
-
-        async function saveUser() {
-            const email = document.getElementById('newUserEmail').value;
-            const approved = document.getElementById('userStatusToggle').checked ? 1 : 0;
-            if (!email) { alert('Email is required'); return; }
-            const endpoint = currentEditEmail ? '/update-user' : '/create-user';
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, approved })
-            });
-            const data = await res.json();
-            if (data.success) { closeUserModal(); loadUsers(); }
-            else { alert('Error: ' + data.error); }
-        }
-
         // Navbar
+        const profileBtn = document.getElementById('profileBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+
         profileBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             profileDropdown.classList.toggle('active');
@@ -1728,5 +1325,4 @@
         });
     </script>
 </body>
-
 </html>

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Bulk Email Sender</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --accent: #00ff88;
+            --accent-dim: rgba(0, 255, 136, 0.15);
+            --admin-accent: #00ccff;
+            --admin-dim: rgba(0, 204, 255, 0.15);
+            --text-primary: #ffffff;
+            --text-secondary: #8888aa;
+            --danger: #ff4466;
+            --border: #2a2a3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                radial-gradient(ellipse at top left, rgba(0, 255, 136, 0.08) 0%, transparent 40%),
+                radial-gradient(ellipse at bottom right, rgba(0, 100, 255, 0.05) 0%, transparent 40%);
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(26, 26, 36, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.6s ease-out;
+            transition: border-color 0.3s ease;
+        }
+
+        .card.admin-mode {
+            border-color: rgba(0, 204, 255, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 204, 255, 0.1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), transparent, var(--accent));
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+            transition: background 0.3s ease;
+        }
+
+        .card.admin-mode::before {
+            background: linear-gradient(90deg, var(--admin-accent), transparent, var(--admin-accent));
+            background-size: 200% 100%;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 100% 0;
+            }
+
+            100% {
+                background-position: -100% 0;
+            }
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--accent) 0%, #00ccff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* Admin Toggle Checkbox */
+        .admin-toggle-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .admin-toggle-wrapper input[type="checkbox"] {
+            appearance: none;
+            width: 40px;
+            height: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .admin-toggle-wrapper input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 14px;
+            height: 14px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .admin-toggle-wrapper input[type="checkbox"]:checked {
+            background: var(--admin-dim);
+            border-color: var(--admin-accent);
+        }
+
+        .admin-toggle-wrapper input[type="checkbox"]:checked::before {
+            transform: translateX(20px);
+            background: var(--admin-accent);
+        }
+
+        .admin-toggle-wrapper:hover {
+            color: var(--text-primary);
+        }
+
+        /* Input Groups */
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            color: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+            background: rgba(18, 18, 26, 0.8);
+        }
+
+        .admin-mode .input-group input:focus {
+            border-color: var(--admin-accent);
+            box-shadow: 0 0 0 3px var(--admin-dim);
+        }
+
+        .btn {
+            width: 100%;
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, var(--admin-accent) 0%, #0088ff 100%);
+            color: #000;
+            margin-top: 10px;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 204, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .otp-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px dashed var(--border);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .message.success {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--accent);
+            border: 1px solid var(--accent-dim);
+        }
+
+        .message.error {
+            background: rgba(255, 68, 102, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(255, 68, 102, 0.2);
+        }
+
+        .demo-hint {
+            text-align: center;
+            margin-top: 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .demo-hint span {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .loader {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--bg-primary);
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+            display: none;
+        }
+
+        .loader-admin {
+            border-color: #000;
+            border-bottom-color: transparent;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-wrapper">
+        <div class="card" id="loginCard">
+            <h1 class="title">Welcome Back</h1>
+            <p class="subtitle">Secure access to Bulk Email Sender</p>
+
+            <!-- Employee Flow (Now Single Flow for All) -->
+            <div id="employeeForm">
+                <div id="emailSection">
+                    <div class="input-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" placeholder="agent@bulk.sender" autocomplete="email">
+                    </div>
+                    <button class="btn btn-primary" id="sendOtpBtn" onclick="handleSendOTP()">
+                        <span>Continue with OTP</span>
+                        <span class="loader" id="sendLoader"></span>
+                    </button>
+                </div>
+
+                <div class="otp-section" id="otpSection">
+                    <div class="input-group">
+                        <label for="otp">Enter 6-Digit Code</label>
+                        <input type="text" id="otp" placeholder="•• •• ••" maxlength="6" autocomplete="one-time-code"
+                            style="text-align: center; letter-spacing: 8px; font-size: 1.2rem;">
+                    </div>
+                    <button class="btn btn-primary" id="verifyOtpBtn" onclick="handleVerifyOTP()">
+                        <span>Verify & Login</span>
+                        <span class="loader" id="verifyLoader"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="statusMessage" class="message"></div>
+
+        </div>
+    </div>
+
+    <script>
+        const loginCard = document.getElementById('loginCard');
+
+        const employeeForm = document.getElementById('employeeForm');
+
+        const emailSection = document.getElementById('emailSection');
+        const otpSection = document.getElementById('otpSection');
+
+        const emailInput = document.getElementById('email');
+        const otpInput = document.getElementById('otp');
+
+        const statusMessage = document.getElementById('statusMessage');
+        const sendLoader = document.getElementById('sendLoader');
+        const verifyLoader = document.getElementById('verifyLoader');
+
+        const sendOtpBtn = document.getElementById('sendOtpBtn');
+        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+
+        function showMessage(msg, type) {
+            statusMessage.textContent = msg;
+            statusMessage.className = `message ${type}`;
+            statusMessage.style.display = 'block';
+        }
+
+        function hideMessage() {
+            statusMessage.style.display = 'none';
+        }
+
+        /* ---- Login Logic ---- */
+
+        async function handleSendOTP() {
+            const email = emailInput.value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showMessage('Please enter a valid email address.', 'error');
+                emailInput.focus();
+                return;
+            }
+
+            hideMessage();
+            sendBtnLoading(true);
+
+            try {
+                const res = await fetch("/send-otp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    sendBtnLoading(false);
+                    emailInput.disabled = true;
+                    sendOtpBtn.style.display = 'none';
+                    otpSection.style.display = 'block';
+                    otpInput.focus();
+                    showMessage(`OTP formally emailed to ${email}`, 'success');
+                } else {
+                    sendBtnLoading(false);
+                    showMessage(data.error || 'Failed to send OTP.', 'error');
+                }
+            } catch (err) {
+                sendBtnLoading(false);
+                showMessage('An error occurred. Check container logs.', 'error');
+            }
+        }
+
+        async function handleVerifyOTP() {
+            const email = emailInput.value.trim();
+            const otp = otpInput.value.trim();
+
+            if (otp.length !== 6) {
+                showMessage('Please enter the 6-digit OTP code.', 'error');
+                return;
+            }
+
+            hideMessage();
+            verifyBtnLoading(true);
+
+            try {
+                const res = await fetch("/verify-otp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: email, otp: otp })
+                });
+
+                const data = await res.json();
+
+                if (data.valid) {
+                    if (data.access_approved) {
+                        verifyBtnLoading(false);
+                        showMessage('Login successful! Redirecting...', 'success');
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1000);
+                    } else {
+                        verifyBtnLoading(false);
+                        if (confirm("Email verified. However, access is not yet approved. Request admin approval?")) {
+                            await fetch("/request-access", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: email })
+                            });
+                            showMessage("Access request formally sent to admin via email. Pending approval.", 'success');
+                        } else {
+                            showMessage("Access denied.", "error");
+                        }
+                    }
+                } else {
+                    verifyBtnLoading(false);
+                    showMessage(data.error || "Invalid OTP code.", "error");
+                }
+            } catch (err) {
+                verifyBtnLoading(false);
+                showMessage("An error occurred during verification.", "error");
+            }
+        }
+
+        /* ---- UI Helpers ---- */
+
+        function sendBtnLoading(isLoading) {
+            sendLoader.style.display = isLoading ? 'inline-block' : 'none';
+            sendOtpBtn.querySelector('span:first-child').style.opacity = isLoading ? '0' : '1';
+            sendOtpBtn.disabled = isLoading;
+        }
+
+        function verifyBtnLoading(isLoading) {
+            verifyLoader.style.display = isLoading ? 'inline-block' : 'none';
+            verifyOtpBtn.querySelector('span:first-child').style.opacity = isLoading ? '0' : '1';
+            verifyOtpBtn.disabled = isLoading;
+        }
+
+        // Add Enter key support
+        emailInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleSendOTP();
+        });
+
+        otpInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') handleVerifyOTP();
+        });
+
+        // Reset UI when navigating back or loading fresh
+        window.onpageshow = function (event) {
+            // Clear all loaders
+            sendBtnLoading(false);
+            verifyBtnLoading(false);
+
+            // Reset UI states to default
+            emailInput.disabled = false;
+            sendOtpBtn.style.display = 'flex';
+            otpSection.style.display = 'none';
+            otpInput.value = '';
+
+            // If the user hit back, we might want to refresh to get fresh session status
+            if (event.persisted) {
+                window.location.reload();
+            }
+        };
+    </script>
+    </script>
+</body>
+
+</html>

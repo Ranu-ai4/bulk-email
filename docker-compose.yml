@@ -1,13 +1,33 @@
 services:
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-dashboard:
+    image: mongo-express:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongo:27017/
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin
+    depends_on:
+      - mongo
+
   bulk-sender:
     build: .
     stdin_open: true
     tty: true
     volumes:
       - ./emails.csv:/app/emails.csv:ro
+      - ./.env:/app/.env:ro
       - "./raw/SAIF - Newsletter Nov2025.png:/app/newsletter.png:ro"
       - "./raw/SAIF - Newsletter Nov2025.pdf:/app/newsletter.pdf:ro"
     environment:
+      - MONGO_URI=mongodb://mongo:27017/
       - RESEND_API_KEY=${RESEND_API_KEY}
       - FROM_EMAIL=${FROM_EMAIL}
       - FROM_NAME=${FROM_NAME:-SAIF Support}
@@ -26,9 +46,11 @@ services:
       - "5050:5000"
     volumes:
       - ./emails.csv:/app/emails.csv
+      - ./.env:/app/.env:ro
       - "./raw/SAIF - Newsletter Nov2025.png:/app/newsletter.png:ro"
       - "./raw/SAIF - Newsletter Nov2025.pdf:/app/newsletter.pdf:ro"
     environment:
+      - MONGO_URI=mongodb://mongo:27017/
       - RESEND_API_KEY=${RESEND_API_KEY}
       - FROM_EMAIL=${FROM_EMAIL}
       - FROM_NAME=${FROM_NAME:-SAIF Support}
@@ -40,3 +62,5 @@ services:
       - HTML_TEMPLATE=template.html
       - RATE_LIMIT=${RATE_LIMIT:-10}
 
+volumes:
+  mongo-data:
