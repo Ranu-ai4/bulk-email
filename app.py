@@ -133,13 +133,13 @@ def send_otp():
         return jsonify({"success": False, "error": "Valid email required"}), 400
 
     # ✅ Only authorized users can receive OTP
-    admin_email = os.getenv("ADMIN_EMAIL")
-    is_admin = email and admin_email and email.lower() == admin_email.lower()
+    user = db.users.find_one({"email": email})
     
-    if not is_admin:
-        user = db.users.find_one({"email": email})
-        if not user or user.get("approved") != 1:
-            return jsonify({"success": False, "authorized": False, "error": "You are not authorized to access this system."})
+    if not user:
+        return jsonify({"success": False, "authorized": False, "error": "You are not authorized to access this system."})
+        
+    if user.get("role") != "admin" and user.get("approved") != 1:
+        return jsonify({"success": False, "authorized": False, "error": "You are not authorized to access this system."})
 
     # Generate 6 digit OTP
     otp = ''.join(random.choices(string.digits, k=6))
@@ -254,13 +254,22 @@ def enhance_template():
     if user_prompt:
         system_instructions = (
             "You are an expert professional email template designer.\n\n"
-            "Analyze the following user prompt carefully:\n"
+            "Analyze the following user prompt carefully to automatically detect which mode to use:\n"
             f"\"{user_prompt}\"\n\n"
-            "Option 1 (New Content/Features): If the prompt describes features, updates, or new content to be announced (e.g. 'This month we added OTP login'), "
-            "discard the provided HTML template and GENERATE A COMPLETELY NEW, professional HTML email template from scratch based on that description. "
-            "Include your own modern design, colors, layout, and structure. Ensure it is fully responsive.\n\n"
-            "Option 2 (Specific Edits): If the prompt is a specific edit instruction (e.g. 'make heading blue', 'shorten paragraph'), "
-            "apply ONLY that change to the provided HTML template. Maintain all other HTML tags, structure, and placeholders (like {{group}}, {{name}}) exactly as they are.\n\n"
+            "Mode 1 — Generate New Template:\n"
+            "If the user's input describes content, topic, features, or an email purpose (e.g. 'holiday greetings', 'product launch', 'monthly newsletter'), generate a COMPLETE, FULL-LENGTH, HIGHLY PROFESSIONAL HTML email template with inline CSS only. Requirements:\n"
+            "- Expand the user's short input into full professional email content with proper sentences and paragraphs\n"
+            "- Beautiful gradient header with title\n"
+            "- Multiple content sections with proper headings and paragraphs\n"
+            "- Styled bullet points if needed\n"
+            "- Elegant CTA button (dark or brand color, never plain red)\n"
+            "- Professional footer with {{name}}, {{company}}, {{year}}, {{support_email}} placeholders\n"
+            "- Clean modern design, proper padding and spacing\n"
+            "- Minimum 500 words of HTML content\n"
+            "- NO external images — use CSS colored blocks only\n"
+            "- Should look exactly like a real company newsletter\n\n"
+            "Mode 2 — Edit Existing Template:\n"
+            "If the user's input is a specific edit instruction (e.g. 'make header blue', 'change font size', 'remove footer'), apply ONLY that specific change to the existing HTML and return the full updated HTML.\n\n"
             "CRITICAL: Return ONLY the raw HTML code. Do not include markdown formating, do not wrap in ```html, and do not add explanatory text."
         )
     else:
@@ -347,20 +356,18 @@ def verify_otp():
         return jsonify({"valid": False, "error": "Invalid OTP"})
             
     # Valid OTP, check user approval status
-    admin_email = os.getenv("ADMIN_EMAIL")
-    
-    if email and admin_email and email.lower() == admin_email.lower():
-        session['role'] = 'admin'
-        session['email'] = email.lower()
-        return jsonify({"valid": True, "access_approved": True, "redirect": "/admin-dashboard"})
-        
     user = db.users.find_one({"email": email})
     
-    if user and user.get("approved") == 1:
-        session['role'] = 'employee'
-        session['email'] = email.lower()
-        return jsonify({"valid": True, "access_approved": True, "redirect": "/dashboard"})
-        
+    if user:
+        if user.get("role") == "admin":
+            session['role'] = 'admin'
+            session['email'] = email.lower()
+            return jsonify({"valid": True, "access_approved": True, "redirect": "/admin-dashboard"})
+        elif user.get("approved") == 1:
+            session['role'] = 'employee'
+            session['email'] = email.lower()
+            return jsonify({"valid": True, "access_approved": True, "redirect": "/dashboard"})
+            
     return jsonify({"valid": True, "access_approved": False})
 
 @app.route("/check-user", methods=["POST"])
@@ -384,14 +391,17 @@ def request_access():
     if not db.users.find_one({"email": email}):
         db.users.insert_one({"email": email, "approved": 0})
     
-    admin_email = os.getenv("ADMIN_EMAIL")
+    admins = db.users.find({"role": "admin"})
     
-    # Notify Admin
-    send_system_email(
-        admin_email,
-        "New Access Request: Bulk Emailer",
-        f"<p>User <b>{email}</b> has requested employee access to the system. Please login to the dashboard and approve them if authorized.</p>"
-    )
+    # Notify all Admins
+    for adm in admins:
+        admin_email = adm.get("email")
+        if admin_email:
+            send_system_email(
+                admin_email,
+                "New Access Request: Bulk Emailer",
+                f"<p>User <b>{email}</b> has requested employee access to the system. Please login to the dashboard and approve them if authorized.</p>"
+            )
     
     # Notify Employee
     send_system_email(
