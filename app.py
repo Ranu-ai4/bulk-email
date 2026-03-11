@@ -99,7 +99,7 @@ def login():
     role = session.get('role')
     if role == 'admin':
         return redirect("/admin-dashboard")
-    elif role == 'employee':
+    elif role == 'user':
         return redirect("/dashboard")
     return render_template("login.html")
 
@@ -112,12 +112,12 @@ def admin_dashboard():
 
 
 @app.route("/dashboard")
-def employee_dashboard():
+def user_dashboard():
     if session.get('role') == 'admin':
         return redirect("/admin-dashboard")
     if not session.get('role'):
         return redirect("/")
-    return index("employee.html")
+    return index("user.html")
 
 
 @app.route("/logout")
@@ -179,13 +179,14 @@ def create_user():
     data = request.json
     email = data.get("email")
     approved = data.get("approved", 0)
+    role = data.get("role", "user")
     
     if not email:
         return jsonify({"success": False, "error": "Email is required"}), 400
         
     db.users.update_one(
         {"email": email},
-        {"$set": {"approved": int(approved)}},
+        {"$set": {"approved": int(approved), "role": role}},
         upsert=True
     )
     return jsonify({"success": True, "message": "User created/updated successfully"})
@@ -199,13 +200,18 @@ def update_user():
     data = request.json
     email = data.get("email")
     approved = data.get("approved")
+    role = data.get("role")
     
     if not email or approved is None:
         return jsonify({"success": False, "error": "Email and approved status are required"}), 400
         
+    update_data = {"approved": int(approved)}
+    if role:
+        update_data["role"] = role
+
     db.users.update_one(
         {"email": email},
-        {"$set": {"approved": int(approved)}}
+        {"$set": update_data}
     )
     return jsonify({"success": True, "message": "User updated successfully"})
 
@@ -364,7 +370,7 @@ def verify_otp():
             session['email'] = email.lower()
             return jsonify({"valid": True, "access_approved": True, "redirect": "/admin-dashboard"})
         elif user.get("approved") == 1:
-            session['role'] = 'employee'
+            session['role'] = 'user'
             session['email'] = email.lower()
             return jsonify({"valid": True, "access_approved": True, "redirect": "/dashboard"})
             
@@ -400,10 +406,10 @@ def request_access():
             send_system_email(
                 admin_email,
                 "New Access Request: Bulk Emailer",
-                f"<p>User <b>{email}</b> has requested employee access to the system. Please login to the dashboard and approve them if authorized.</p>"
+                f"<p>User <b>{email}</b> has requested user access to the system. Please login to the dashboard and approve them if authorized.</p>"
             )
     
-    # Notify Employee
+    # Notify User
     send_system_email(
         email,
         "Access Request Received",
@@ -428,7 +434,7 @@ def approve():
 
     db.users.update_one({"email": email}, {"$set": {"approved": 1}})
     
-    # Notify Employee they are approved
+    # Notify User they are approved
     send_system_email(
         email,
         "Access Approved: Bulk Emailer",
@@ -626,7 +632,7 @@ def index(template_name="index.html"):
 
         email_preview_html = personalize_html(html, sample_name)
         
-    role = session.get('role', 'employee')
+    role = session.get('role', 'user')
 
     return render_template(
         template_name,

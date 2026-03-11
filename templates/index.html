@@ -177,6 +177,18 @@
             color: var(--danger);
         }
 
+        .badge-admin {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent);
+            border: 1px solid transparent;
+        }
+
+        .badge-user {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
         /* Toggle Switch */
         .switch {
             position: relative;
@@ -1241,6 +1253,7 @@
                 <thead>
                     <tr>
                         <th>Email</th>
+                        <th>Role</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -1355,6 +1368,13 @@
                 <div class="form-group">
                     <label>Email Address</label>
                     <input type="email" id="newUserEmail" class="form-control" placeholder="user@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="newUserRole" class="form-control" style="appearance: auto;">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Account Status</label>
@@ -1643,9 +1663,12 @@
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = '';
             users.forEach(user => {
+                const roleText = user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'User';
+                const roleClass = user.role === 'admin' ? 'badge-admin' : 'badge-user';
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${user.email}</td>
+                    <td><span class="badge ${roleClass}">${roleText}</span></td>
                     <td>
                         <span class="badge ${user.approved == 1 ? 'badge-active' : 'badge-inactive'}">
                             ${user.approved == 1 ? 'Active' : 'Inactive'}
@@ -1654,7 +1677,7 @@
                     <td>
                         <div style="display:flex;gap:8px;">
                             <button class="btn-edit" style="padding:4px 12px;font-size:0.75rem;"
-                                onclick="editUser('${user.email}', ${user.approved})">Edit</button>
+                                onclick="editUser('${user.email}', ${user.approved}, '${user.role || 'user'}')">Edit</button>
                             <button style="padding:4px 12px;font-size:0.75rem;background:#ff4444;color:white;border:none;border-radius:4px;cursor:pointer;"
                                 onclick="deleteUser('${user.email}')">Delete</button>
                         </div>
@@ -1668,6 +1691,7 @@
             currentEditEmail = null;
             document.getElementById('newUserEmail').value = '';
             document.getElementById('newUserEmail').disabled = false;
+            document.getElementById('newUserRole').value = 'user';
             document.getElementById('userStatusToggle').checked = true;
             document.getElementById('statusLabel').innerText = 'Active';
             document.getElementById('statusLabel').style.color = 'var(--accent)';
@@ -1675,10 +1699,11 @@
             document.querySelector('#userModal h2').innerText = '👤 Create User';
         }
 
-        function editUser(email, approved) {
+        function editUser(email, approved, role = 'user') {
             currentEditEmail = email;
             document.getElementById('newUserEmail').value = email;
             document.getElementById('newUserEmail').disabled = true;
+            document.getElementById('newUserRole').value = role;
             document.getElementById('userStatusToggle').checked = approved === 1;
             document.getElementById('statusLabel').innerText = approved === 1 ? 'Active' : 'Inactive';
             document.getElementById('statusLabel').style.color = approved === 1 ? 'var(--accent)' : 'var(--text-secondary)';
@@ -1702,13 +1727,14 @@
 
         async function saveUser() {
             const email = document.getElementById('newUserEmail').value;
+            const role = document.getElementById('newUserRole').value;
             const approved = document.getElementById('userStatusToggle').checked ? 1 : 0;
             if (!email) { alert('Email is required'); return; }
             const endpoint = currentEditEmail ? '/update-user' : '/create-user';
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, approved })
+                body: JSON.stringify({ email, approved, role })
             });
             const data = await res.json();
             if (data.success) { closeUserModal(); loadUsers(); }
