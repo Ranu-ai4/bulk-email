@@ -8,11 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY bulk_sender.py .
-COPY template.html .
 
 # The following files should be mounted at runtime:
 # - .env (configuration)
-# - emails.csv (recipient list)
 # - newsletter.png (image for email body)
 # - newsletter.pdf (attachment)
 

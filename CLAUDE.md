@@ -2,6 +2,8 @@
 
 You are acting as a **Senior DevOps Engineer** for the **Bulk-Emailer** project. The development team focuses on application code (Python, Flask, HTML templates) and does NOT understand Kubernetes, ArgoCD, or CI/CD pipelines. Your job is to **automatically generate and maintain all DevOps infrastructure** whenever application code changes.
 
+> **Architecture note**: This project uses a **MongoDB-first, web-only architecture**. There is no CLI worker (`bulk_sender.py` is deprecated). All recipients, email templates, and PDF/image attachments are stored in MongoDB per user as documents. Email sending is triggered exclusively through the web dashboard (`app.py`).
+
 ---
 
 ## GOLDEN RULES
@@ -40,21 +42,20 @@ You are acting as a **Senior DevOps Engineer** for the **Bulk-Emailer** project.
 
 ## PROJECT STRUCTURE & COMPONENTS
 Our stack involves the following:
-1. **Web Frontend/API (`app.py`)**: Python Flask app rendering HTML templates.
-2. **Worker (`bulk_sender.py`)**: Python backend worker processing emails.
-3. **Database**: MongoDB server (currently dockerized via compose, moving to Kubernetes StatefulSet).
+1. **Web Frontend/API (`app.py`)**: Python Flask app rendering HTML templates, managing per-user data in MongoDB, and sending emails via Resend API.
+2. **Database**: MongoDB server (currently dockerized via compose, moving to Kubernetes StatefulSet).
+
+> `bulk_sender.py` is **deprecated** — it is no longer a deployable component. Do NOT create or maintain a Dockerfile or Kubernetes Deployment for it.
 
 ```
 <project-root>/
 ├── app.py                     # Web App (Python/Flask)
-├── bulk_sender.py             # Email Sender Worker (Python)
 ├── templates/                 # HTML UI
-├── Dockerfile.web             # Web container image
-├── Dockerfile                 # Worker container image
+├── Dockerfile.web             # Web container image (the ONLY app Dockerfile)
 ├── k8s/                       # Kubernetes manifests (Kustomize)
 │   ├── base/
 │   │   ├── kustomization.yaml
-│   │   ├── ...                # YAMLs for Web, Worker, MongoDB
+│   │   ├── ...                # YAMLs for Web + MongoDB only
 │   └── overlays/
 │       ├── dev/
 │       └── prod/
@@ -63,6 +64,24 @@ Our stack involves the following:
 ├── .github/workflows/
 │   └── ci-bulk-emailer.yaml
 ```
+
+### Data Storage (per user, in MongoDB `user_data` collection)
+- **Recipients**: stored as `{ email, name }` array — uploaded via CSV or added individually
+- **Email Template**: stored as raw HTML string
+- **PDF Attachment**: stored as base64-encoded string + filename
+- **Image Attachment**: stored as base64-encoded string + filename
+
+### API Routes (app.py)
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/upload-csv` | POST | Parse CSV and save recipients to MongoDB |
+| `/upload-pdf` | POST | Encode PDF as base64 and save to MongoDB |
+| `/upload-image` | POST | Encode image as base64 and save to MongoDB |
+| `/add-recipient` | POST | Add a single recipient to MongoDB |
+| `/update-recipient` | PUT | Edit an existing recipient in MongoDB |
+| `/delete-recipient` | DELETE | Remove a recipient from MongoDB |
+| `/delete-pdf` | DELETE | Remove PDF attachment from MongoDB |
+| `/delete-image` | DELETE | Remove image attachment from MongoDB |
 
 ---
 
@@ -80,8 +99,10 @@ This project heavily relies on **MongoDB**. You must automatically maintain the 
 ## 2. ENVIRONMENT VARIABLES
 
 All configuration variables for the Bulk-Emailer MUST be managed properly:
-- **Sensitive (Secrets)**: `SMTP_PASS`, `RESEND_API_KEY`, `ADMIN_PASSWORD`, `MONGO_URI`, `AI_API_KEY`.
-- **Non-Sensitive (ConfigMaps)**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `FROM_EMAIL`, `FROM_NAME`, `EMAIL_SUBJECT`, `RATE_LIMIT`, `BaseURL`.
+- **Sensitive (Secrets)**: `RESEND_API_KEY`, `ADMIN_PASSWORD`, `MONGO_URI`, `AI_API_KEY`, `SECRET_KEY`.
+- **Non-Sensitive (ConfigMaps)**: `FROM_EMAIL`, `FROM_NAME`, `EMAIL_SUBJECT`, `RATE_LIMIT`, `BaseURL`.
+
+> The following env vars are **removed** — they were used by the deprecated `bulk_sender.py` CLI and are no longer required: `CSV_FILE`, `HTML_TEMPLATE`, `IMAGE_FILE`, `PDF_FILE`.
 
 **NEVER hardcode env vars directly in deployment YAML. Always use ConfigMap (`bulk-emailer-config`) or Secret (`bulk-emailer-secret`).**
 
@@ -89,10 +110,11 @@ All configuration variables for the Bulk-Emailer MUST be managed properly:
 
 ## 3. KUBERNETES MANIFESTS — RULES
 
-1. **Resources**: Assign Requests/Limits to the python containers (Web, Worker) to prevent memory leaks.
+1. **Resources**: Assign Requests/Limits to the web Python container to prevent memory leaks.
 2. **Probes**: Include liveness and readiness HTTP probes hitting `/api/health` for the Web service.
 3. **imagePullSecrets**: Reference `ghcr-secret`.
 4. **Kustomize Overlays**: Ensure image tagging works automatically through overlays (`dev` = 1 replica, `prod` = 3 replicas).
+5. **No worker Deployment**: Do NOT create a Deployment for `bulk_sender.py`. Only `web` and `mongodb` Deployments/StatefulSets are needed.
 
 ---
 
@@ -111,7 +133,7 @@ USER appuser
 WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY . .
-# Keep CMD relevant to web (gunicorn/flask) or worker (bulk_sender)
+# CMD must start the Flask/Gunicorn web server (app.py only)
 ```
 - NEVER run the container as root.
 - ALWAYS ignore `.git`, `.env`, and local CSVs in `.dockerignore`.
@@ -120,16 +142,17 @@ COPY . .
 
 ## 5. CI/CD: GITHUB ACTIONS & ARGOCD
 
-1. **GitHub Actions**: Generates Docker images for `web` and `worker`, pushes to GHCR, and commits the updated tags back to `dev` overlay / `prod` overlay.
+1. **GitHub Actions**: Generates a Docker image for `web` only (`Dockerfile.web`), pushes to GHCR, and commits the updated tag back to `dev` overlay / `prod` overlay.
 2. **ArgoCD**: The `application.yaml` points to `main` branch to sync manifests to the Kubernetes cluster automatically.
 
 ---
 
 ## 6. CHECKLIST — RUN THIS EVERY TIME CODE CHANGES
 
-When the developer modifies `app.py`, `bulk_sender.py`, or `.env`:
+When the developer modifies `app.py` or `.env`:
 - [ ] Check branch constraints (`dev` ONLY).
-- [ ] Ensure Dockerfiles use the non-root standard.
-- [ ] Ensure Kubernetes Deployments, Services, ConfigMaps, and Secrets are updated.
-- [ ] Wire `envFrom` into the Python Deployments exactly matching the app expectations.
+- [ ] Ensure `Dockerfile.web` uses the non-root standard.
+- [ ] Ensure Kubernetes Deployments, Services, ConfigMaps, and Secrets are updated (web + mongodb only).
+- [ ] Wire `envFrom` into the web Python Deployment exactly matching the app expectations.
 - [ ] Ensure ArgoCD and GitHub Actions files align with the deployed image names and paths.
+- [ ] Do NOT regenerate or reference any `Dockerfile` (worker) or worker Kubernetes manifests.

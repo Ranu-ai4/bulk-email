@@ -17,9 +17,7 @@ import string
 import datetime
 
 import datetime
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import resend
 
 from flask import Flask, render_template, request, jsonify, session, redirect
 from dotenv import load_dotenv
@@ -58,33 +56,21 @@ send_state = {
 # -----------------------------
 
 def send_system_email(to_email, subject, body_html):
-    smtp_host = os.getenv('SMTP_HOST')
-    smtp_port = int(os.getenv('SMTP_PORT', 587))
-    smtp_user = os.getenv('SMTP_USER')
-    smtp_pass = os.getenv('SMTP_PASS')
-    if smtp_pass:
-        smtp_pass = smtp_pass.replace(' ', '')
+    resend.api_key = os.getenv('RESEND_API_KEY')
     from_email = os.getenv('FROM_EMAIL')
     from_name = os.getenv('FROM_NAME', 'System')
 
-    if not all([smtp_host, smtp_user, smtp_pass]):
-        print("SMTP Credentials missing. Cannot send system email.")
+    if not resend.api_key or not from_email:
+        print("Resend Credentials missing. Cannot send system email.")
         return False
 
     try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = f"{from_name} <{from_email}>"
-        msg['To'] = to_email
-
-        html_part = MIMEText(body_html, 'html')
-        msg.attach(html_part)
-
-        server = smtplib.SMTP(str(smtp_host), smtp_port)
-        server.starttls()
-        server.login(str(smtp_user), str(smtp_pass))
-        server.send_message(msg)
-        server.quit()
+        r = resend.Emails.send({
+            "from": f"{from_name} <{from_email}>",
+            "to": to_email,
+            "subject": subject,
+            "html": body_html
+        })
         return True
     except Exception as e:
         print(f"Error sending system email: {e}")
@@ -240,8 +226,8 @@ def enhance_template():
     html_content = data.get("html")
     user_prompt = data.get("prompt", "").strip()
     
-    if not html_content:
-        return jsonify({"success": False, "error": "HTML content is required"}), 400
+    if not html_content and not user_prompt:
+        return jsonify({"success": False, "error": "HTML content or prompt is required"}), 400
     
     api_key = os.getenv("AI_API_KEY", "").strip()
     print(f"DEBUG: AI_API_KEY present: {bool(api_key)}")
@@ -256,39 +242,18 @@ def enhance_template():
     url = f"{base_url}/chat/completions"
     model = "openai/gpt-oss-120b"
     
-    # Dynamic System Instructions based on whether there's a specific prompt
-    if user_prompt:
-        system_instructions = (
-            "You are an expert professional email template designer.\n\n"
-            "Analyze the following user prompt carefully to automatically detect which mode to use:\n"
-            f"\"{user_prompt}\"\n\n"
-            "Mode 1 — Generate New Template:\n"
-            "If the user's input describes content, topic, features, or an email purpose (e.g. 'holiday greetings', 'product launch', 'monthly newsletter'), generate a COMPLETE, FULL-LENGTH, HIGHLY PROFESSIONAL HTML email template with inline CSS only. Requirements:\n"
-            "- Expand the user's short input into full professional email content with proper sentences and paragraphs\n"
-            "- Beautiful gradient header with title\n"
-            "- Multiple content sections with proper headings and paragraphs\n"
-            "- Styled bullet points if needed\n"
-            "- Elegant CTA button (dark or brand color, never plain red)\n"
-            "- Professional footer with {{name}}, {{company}}, {{year}}, {{support_email}} placeholders\n"
-            "- Clean modern design, proper padding and spacing\n"
-            "- Minimum 500 words of HTML content\n"
-            "- NO external images — use CSS colored blocks only\n"
-            "- Should look exactly like a real company newsletter\n\n"
-            "Mode 2 — Edit Existing Template:\n"
-            "If the user's input is a specific edit instruction (e.g. 'make header blue', 'change font size', 'remove footer'), apply ONLY that specific change to the existing HTML and return the full updated HTML.\n\n"
-            "CRITICAL: Return ONLY the raw HTML code. Do not include markdown formating, do not wrap in ```html, and do not add explanatory text."
-        )
+    # Dynamic System Instructions and User Content
+    if not html_content or not html_content.strip():
+        # Generate fresh template
+        system_instructions = "You are an expert professional email template designer. Generate a COMPLETE, FULL-LENGTH, HIGHLY PROFESSIONAL HTML email template with inline CSS. Return ONLY raw HTML code without markdown formatting."
+        user_content = f"Create a complete professional HTML email template: {user_prompt}"
     else:
+        # Enhance existing template
         system_instructions = (
-            "You are a professional email template designer and copywriter. Enhance the provided HTML email template "
-            "to be more professional, engaging, and clear. \n"
-            "Rules:\n"
-            "1. Maintain all HTML tags and structure exactly as they are.\n"
-            "2. Only improve the text content between the tags.\n"
-            "3. Keep placeholders like {{group}}, {{name}}, {{greeting}}, etc. unchanged.\n"
-            "4. Do not add any new tags or remove existing ones.\n"
-            "5. Return ONLY the enhanced HTML code without any markdown formatting or code blocks."
+            "You are a professional email template designer. Modify the provided HTML based on the user instructions. "
+            "Maintain the overall structure but apply the requested changes. Return ONLY raw HTML code without markdown formatting."
         )
+        user_content = f"Modify this HTML email template based on this instruction: {user_prompt}\n\nHTML:\n{html_content}"
     
     payload = {
         "model": model,
@@ -299,7 +264,7 @@ def enhance_template():
             },
             {
                 "role": "user",
-                "content": f"HTML Template:\n{html_content}"
+                "content": user_content
             }
         ]
     }
@@ -502,26 +467,17 @@ def personalize_html(html: str, name: str):
 
 
 def get_config():
-
-    smtp_pass = os.getenv('SMTP_PASS')
-    if smtp_pass:
-        smtp_pass = smtp_pass.replace(' ', '')
-
     return {
-        'smtp_host': os.getenv('SMTP_HOST'),
-        'smtp_port': int(os.getenv('SMTP_PORT', 587)),
-        'smtp_user': os.getenv('SMTP_USER'),
-        'smtp_pass': smtp_pass,
         'from_email': os.getenv('FROM_EMAIL'),
         'from_name': os.getenv('FROM_NAME', 'Support'),
         'subject': os.getenv('EMAIL_SUBJECT', 'Newsletter'),
-        'csv_file': os.getenv('CSV_FILE', 'emails.csv'),
-        'html_template': os.getenv('HTML_TEMPLATE', 'template.html'),
+        'csv_file': os.getenv('CSV_FILE'),
+        'html_template': os.getenv('HTML_TEMPLATE'),
         'rate_limit': int(os.getenv('RATE_LIMIT', '2'))
     }
 
 
-def send_emails_async(recipients, html_template, config):
+def send_emails_async(recipients, html_template, config, attachments=None):
 
     global send_state
 
@@ -534,7 +490,8 @@ def send_emails_async(recipients, html_template, config):
         'complete': False
     }
 
-    if not all([config['smtp_host'], config['smtp_user'], config['smtp_pass']]):
+    resend.api_key = os.getenv('RESEND_API_KEY')
+    if not resend.api_key:
         send_state['is_sending'] = False
         send_state['failed'] = len(recipients)
         send_state['complete'] = True
@@ -542,37 +499,25 @@ def send_emails_async(recipients, html_template, config):
 
     delay = 1.0 / config['rate_limit']
 
-    try:
-        server = smtplib.SMTP(str(config['smtp_host']), config['smtp_port'])
-        server.starttls()
-        server.login(str(config['smtp_user']), str(config['smtp_pass']))
-    except Exception as e:
-        send_state['is_sending'] = False
-        send_state['failed'] = len(recipients)
-        send_state['errors'].append({'email': 'SMTP Connection Error', 'error': str(e)}) # type: ignore
-        send_state['complete'] = True
-        return
-
     for recipient in recipients:
-
         try:
-
             html = personalize_html(html_template, recipient['name'])
             
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = config['subject']
-            msg['From'] = f"{config['from_name']} <{config['from_email']}>"
-            msg['To'] = recipient['email']
+            email_params = {
+                "from": f"{config['from_name']} <{config['from_email']}>",
+                "to": recipient['email'],
+                "subject": config['subject'],
+                "html": html
+            }
 
-            html_part = MIMEText(html, 'html')
-            msg.attach(html_part)
+            if attachments:
+                email_params["attachments"] = attachments
 
-            server.send_message(msg)
+            r = resend.Emails.send(email_params)
 
             send_state['sent'] += 1 # type: ignore
 
         except Exception as e:
-
             send_state['failed'] += 1 # type: ignore
             send_state['errors'].append({ # type: ignore
                 'email': recipient['email'],
@@ -580,11 +525,6 @@ def send_emails_async(recipients, html_template, config):
             })
 
         time.sleep(delay)
-
-    try:
-        server.quit()
-    except:
-        pass
 
     send_state['is_sending'] = False
     send_state['complete'] = True
@@ -602,35 +542,32 @@ def index(template_name="index.html"):
 
     errors = []
 
-    if not all([config['smtp_host'], config['smtp_user'], config['smtp_pass']]):
-        errors.append('SMTP Credentials not configured')
+    if not os.getenv('RESEND_API_KEY'):
+        errors.append('RESEND_API_KEY not configured')
 
     if not config['from_email']:
         errors.append('FROM_EMAIL not configured')
 
+    user_data = db.user_data.find_one({"email": session.get('email')}) or {}
+    recipients = user_data.get('recipients', [])
+    saved_template = user_data.get('template', '')
+    
     files_status = {
-        'csv': Path(config['csv_file']).exists(),
-        'template': Path(config['html_template']).exists()
+        'csv': bool(recipients),
+        'template': bool(saved_template),
+        'pdf': bool(user_data.get('pdf_filename')),
+        'image': bool(user_data.get('image_filename')),
+        'pdf_filename': user_data.get('pdf_filename', ''),
+        'image_filename': user_data.get('image_filename', '')
     }
 
-    recipients = []
     invalid_emails = []
-
-    if files_status['csv']:
-        try:
-            recipients, invalid_emails = load_csv(config['csv_file'])
-        except Exception as e:
-            errors.append(str(e))
 
     email_preview_html = ""
 
     if files_status['template']:
-
-        html = load_html_template(config['html_template'])
-
         sample_name = recipients[0]['name'] if recipients else "John Doe"
-
-        email_preview_html = personalize_html(html, sample_name)
+        email_preview_html = personalize_html(saved_template, sample_name)
         
     role = session.get('role', 'user')
 
@@ -647,29 +584,243 @@ def index(template_name="index.html"):
         role=role,
         email=session.get('email')
     )
+@app.route('/upload-csv', methods=['POST'])
+def upload_csv():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    
+    if 'csv_file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['csv_file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    try:
+        content = file.read().decode('utf-8')
+        reader = csv.DictReader(content.splitlines())
+        recipients = []
+        for row in reader:
+            email = row.get('email', '').strip()
+            name = row.get('name', '').strip()
+            if email and validate_email(email):
+                recipients.append({'email': email, 'name': name})
+        
+        db.user_data.update_one(
+            {"email": session['email']},
+            {"$set": {"recipients": recipients}},
+            upsert=True
+        )
+        return jsonify({"success": True, "total": len(recipients)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/upload-pdf', methods=['POST'])
+def upload_pdf():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    
+    if 'pdf_file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['pdf_file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    try:
+        content = file.read()
+        base64_content = base64.b64encode(content).decode('utf-8')
+        
+        db.user_data.update_one(
+            {"email": session['email']},
+            {"$set": {
+                "pdf_base64": base64_content,
+                "pdf_filename": file.filename
+            }},
+            upsert=True
+        )
+        return jsonify({"success": True, "filename": file.filename})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/upload-image', methods=['POST'])
+def upload_image():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    
+    if 'image_file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['image_file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    try:
+        content = file.read()
+        base64_content = base64.b64encode(content).decode('utf-8')
+        
+        db.user_data.update_one(
+            {"email": session['email']},
+            {"$set": {
+                "image_base64": base64_content,
+                "image_filename": file.filename
+            }},
+            upsert=True
+        )
+        return jsonify({"success": True, "filename": file.filename})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/delete-pdf', methods=['DELETE'])
+def delete_pdf():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    
+    try:
+        db.user_data.update_one(
+            {"email": session['email']},
+            {"$unset": {
+                "pdf_base64": "",
+                "pdf_filename": ""
+            }}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/delete-image', methods=['DELETE'])
+def delete_image():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    
+    try:
+        db.user_data.update_one(
+            {"email": session['email']},
+            {"$unset": {
+                "image_base64": "",
+                "image_filename": ""
+            }}
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# ✅ Update a recipient
+@app.route('/update-recipient', methods=['PUT'])
+def update_recipient():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    
+    data = request.json
+    old_email = data.get('old_email')
+    new_email = data.get('new_email')
+    new_name = data.get('new_name')
+
+    if not all([old_email, new_email, new_name]):
+        return jsonify({"error": "Missing data"}), 400
+    
+    try:
+        result = db.user_data.update_one(
+            {"email": session['email'], "recipients.email": old_email},
+            {"$set": {
+                "recipients.$.email": new_email,
+                "recipients.$.name": new_name
+            }}
+        )
+        if result.modified_count > 0:
+            return jsonify({"success": True})
+        return jsonify({"error": "Recipient not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# ✅ Add a single recipient
+@app.route('/add-recipient', methods=['POST'])
+def add_recipient():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+
+    data = request.json
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip()
+
+    if not email:
+        return jsonify({"success": False, "error": "Email is required"}), 400
+
+    if not validate_email(email):
+        return jsonify({"success": False, "error": "Invalid email address"}), 400
+
+    try:
+        # Check for duplicate
+        user_data = db.user_data.find_one({"email": session['email']}) or {}
+        existing = user_data.get('recipients', [])
+        if any(r.get('email', '').lower() == email.lower() for r in existing):
+            return jsonify({"success": False, "error": "Recipient with this email already exists"}), 409
+
+        db.user_data.update_one(
+            {"email": session['email']},
+            {"$push": {"recipients": {"name": name, "email": email}}},
+            upsert=True
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# ✅ Delete a recipient
+@app.route('/delete-recipient', methods=['DELETE'])
+def delete_recipient():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    
+    data = request.json
+    email = data.get('email')
+
+    if not email:
+        return jsonify({"error": "Email required"}), 400
+    
+    try:
+        result = db.user_data.update_one(
+            {"email": session['email']},
+            {"$pull": {"recipients": {"email": email}}}
+        )
+        if result.modified_count > 0:
+            return jsonify({"success": True})
+        return jsonify({"error": "Recipient not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 # ✅ Get template HTML for editor
-@app.route('/get-template', methods=['GET'])
+@app.route('/get-template')
 def get_template():
-    config = get_config()
-    try:
-        html = load_html_template(config['html_template'])
-        return jsonify({"html": html})
-    except Exception as e:
-        return jsonify({"html": "", "error": str(e)})
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    user_data = db.user_data.find_one({"email": session.get('email')}) or {}
+    html = user_data.get('template', '')
+    return jsonify({"html": html})
 
 
 # ✅ Save edited template HTML to file
 @app.route('/save-template', methods=['POST'])
 def save_template():
-    config = get_config()
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
     html = request.json.get("html", "")
-    try:
-        with open(config['html_template'], 'w', encoding='utf-8') as f:
-            f.write(html)
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+    db.user_data.update_one(
+        {"email": session['email']},
+        {"$set": {"template": html}},
+        upsert=True
+    )
+    return jsonify({"success": True})
+
+
+@app.route('/has-template')
+def has_template():
+    if not session.get('role'):
+        return jsonify({"error": "Login required"}), 403
+    user_data = db.user_data.find_one({"email": session.get('email')}) or {}
+    has_template = bool(user_data.get('template', ''))
+    has_recipients = bool(user_data.get('recipients', []))
+    return jsonify({"has_template": has_template, "has_recipients": has_recipients})
 
 
 @app.route('/preview', methods=['GET'])
@@ -680,17 +831,20 @@ def get_preview():
     
     html = ""
     try:
-        html = load_html_template(config['html_template'])
-        recipients, _ = load_csv(config['csv_file'])
+        user_data = db.user_data.find_one({"email": session.get('email')}) or {}
+        html = user_data.get('template', '')
+        recipients = user_data.get('recipients', [])
         sample_name = recipients[0]['name'] if recipients else "John Doe"
-        html = personalize_html(html, sample_name)
+        if html:
+            html = personalize_html(html, sample_name)
     except Exception:
         pass
         
     return jsonify({
         "from": f"{from_name} <{config['from_email']}>",
         "subject": subject,
-        "pdf_name": os.getenv("PDF_ORIGINAL_NAME", config.get("pdf_file", "None")),
+        "pdf_name": user_data.get('pdf_filename', 'None'),
+        "image_name": user_data.get('image_filename', 'None'),
         "html": html
     })
 
@@ -704,13 +858,31 @@ def send():
 
     config = get_config()
 
-    recipients, _ = load_csv(config['csv_file'])
+    user_data = db.user_data.find_one({"email": session.get('email')}) or {}
+    recipients = user_data.get('recipients', [])
 
-    html_template = load_html_template(config['html_template'])
+    html_template = user_data.get('template', '')
+    if not html_template:
+        return jsonify({'error': 'No saved template found.'}), 400
+
+    attachments = []
+    if user_data.get('pdf_base64'):
+        attachments.append({
+            "filename": user_data.get('pdf_filename', 'attachment.pdf'),
+            "content": user_data['pdf_base64'],
+            "content_type": "application/pdf"
+        })
+    
+    if user_data.get('image_base64'):
+        attachments.append({
+            "filename": user_data.get('image_filename', 'image.png'),
+            "content": user_data['image_base64'],
+            "content_type": "image/png"
+        })
 
     thread = Thread(
         target=send_emails_async,
-        args=(recipients, html_template, config)
+        args=(recipients, html_template, config, attachments)
     )
 
     thread.start()

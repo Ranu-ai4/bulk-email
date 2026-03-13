@@ -274,10 +274,10 @@ def main():
         'from_email': os.getenv('FROM_EMAIL'),
         'from_name': os.getenv('FROM_NAME', 'Support'),
         'subject': os.getenv('EMAIL_SUBJECT', 'Newsletter'),
-        'csv_file': os.getenv('CSV_FILE', 'emails.csv'),
+        'csv_file': os.getenv('CSV_FILE'),
         'image_file': os.getenv('IMAGE_FILE', 'newsletter.png'),
         'pdf_file': os.getenv('PDF_FILE', 'newsletter.pdf'),
-        'html_template': os.getenv('HTML_TEMPLATE', 'template.html'),
+        'html_template': os.getenv('HTML_TEMPLATE'),
         'rate_limit': int(os.getenv('RATE_LIMIT', '2'))
     }
     
@@ -294,76 +294,9 @@ def main():
             console.print(f"   - {var}")
         console.print("\n[yellow]Please copy .env.example to .env and fill in the values.[/yellow]")
         return
-    
-    # Check required files exist
-    required_files = [
-        ('CSV file', config['csv_file']),
-        ('Image file', config['image_file']),
-        ('PDF file', config['pdf_file']),
-        ('HTML template', config['html_template'])
-    ]
-    
-    missing_files = []
-    for name, path in required_files:
-        if not Path(path).exists():
-            missing_files.append((name, path))
-    
-    if missing_files:
-        console.print(f"\n[red]❌ Error: Required files not found:[/red]")
-        for name, path in missing_files:
-            console.print(f"   - {name}: {path}")
-        return
-    
-    # Load data
-    console.print("\n[cyan]Loading data...[/cyan]")
-    
-    try:
-        recipients = load_csv(config['csv_file'])
-        html_template = load_html_template(config['html_template'])
-    except Exception as e:
-        console.print(f"\n[red]❌ Error loading data: {e}[/red]")
-        return
-    
-    if not recipients:
-        console.print("\n[red]❌ Error: No valid recipients found in CSV file.[/red]")
-        return
-    
-    # Show preview
-    show_preview(recipients, html_template, config)
-    
-    # Handle dry-run mode
-    if DRY_RUN:
-        console.print("\n[cyan]🔍 DRY RUN MODE - No emails will be sent.[/cyan]")
-        console.print("[green]✅ Preview complete. Remove --dry-run flag to send emails.[/green]")
-        return
-    
-    # Confirm before sending
-    console.print("\n")
-    if AUTO_CONFIRM:
-        console.print("[yellow]Auto-confirm enabled (--yes flag)[/yellow]")
-    elif not Confirm.ask("[bold yellow]Do you want to proceed with sending emails?[/bold yellow]"):
-        console.print("\n[yellow]Email sending cancelled.[/yellow]")
-        return
-    
-    # Send emails
-    sent, failed, failed_emails = send_emails(recipients, html_template, config)
-    
-    # Show summary
-    console.print("\n")
-    console.print(Panel.fit(
-        f"[bold green]✅ EMAIL DELIVERY COMPLETE[/bold green]\n\n"
-        f"[green]Sent successfully:[/green] {sent}\n"
-        f"[red]Failed:[/red] {failed}",
-        title="Summary",
-        border_style="green"
-    ))
-    
-    # Save failed log if any
-    if failed_emails:
-        log_file = f"failed_emails_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        save_failed_log(failed_emails, log_file)
-        console.print(f"\n[yellow]Failed emails logged to: {log_file}[/yellow]")
-        console.print("[dim]You can retry these emails by using this file as input.[/dim]")
+
+    console.print("\n[yellow]⚠️ CLI sender is deprecated. Please use the web dashboard.[/yellow]")
+    return
 
 
 if __name__ == "__main__":
